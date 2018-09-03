@@ -16,3 +16,9 @@ Apart from adding this package you have to:
 
 #define PWM_LIMIT_GLOBAL_8V 800.0 // maximum: 1200
 #define PWM_LIMIT_GLOBAL_24V 500.0
+
+
+- To git:
+git commit -m "first commit"
+git remote add origin https://github.com/Virginia5632/allegro_hrii.git
+git push -u origin master
