@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   allegro_hand_driver #VRG
   bhand               #VRG
   libpcan             #VRG
+  ll4ma_kdl           #VRG
   sensor_msgs         #VRG
   message_generation
 )
@@ -123,8 +124,8 @@ catkin_package(
 include_directories(
  include
  include ${catkin_INCLUDE_DIRS}
- include_directories(${PROJECT_SOURCE_DIR}/src/allegro_hand_controllers/src)
- include_directories(${PROJECT_SOURCE_DIR}/src/allegro_hand/src)
+# include(${PROJECT_SOURCE_DIR}/src/allegro_hand_controllers/src)
+ include(${PROJECT_SOURCE_DIR}/src/allegro_hand/src)
 #  ${CMAKE_SOURCE_DIR}/src/allegro_hrii/include
 )
 
@@ -184,6 +185,7 @@ add_dependencies(allegro_node_grav ${EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS
 ## Mark executables and/or libraries for installation
 install(TARGETS 
   allegro_node_impedance
+  allegro_node_grav
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

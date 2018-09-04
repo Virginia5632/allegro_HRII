@@ -1,5 +1,7 @@
 #include "allegro_node_grav.h"
 
+#include <ros/package.h>
+
 #define RADIANS_TO_DEGREES(radians) ((radians) * (180.0 / M_PI))
 #define DEGREES_TO_RADIANS(angle) ((angle) / 180.0 * M_PI)
 
@@ -77,7 +79,7 @@ std::string initialPosition[DOF_JOINTS] =
                 "~initial_position/j33"
         };
 
-// Constructor subscribes to topics.
+// Constructor subscribes to topics.	
 AllegroNodeImpedance::AllegroNodeImpedance()
         : AllegroNode() {
   control_hand_ = false;
@@ -98,6 +100,23 @@ AllegroNodeImpedance::AllegroNodeImpedance()
 AllegroNodeImpedance::~AllegroNodeImpedance() {
   ROS_INFO("PD controller node is shutting down");
 }
+
+
+allegroKDL::allegroKDL(vector<double> g_vec)
+{
+  // load urdf file
+//   _urdf_file = ros::package::getPath("ll4ma_robots_description");
+//   _urdf_file.append("/robots/depreciated/urdf/allegro_kdl.urdf");
+  _urdf_file="/home/virginia/allegro_hand_ros_catkin/src/allegro_hand_description/allegro_hand_description_right.urdf";
+  _ee_names={"index_tip","middle_tip","ring_tip","thumb_tip"};
+  _base_names={"palm_link","palm_link","palm_link","palm_link"};
+  _g_vec=g_vec;
+
+  // build kdl tree and chains:
+  _allegro_kdl=new robotKDL(_urdf_file,_base_names,_ee_names,_g_vec);
+//    _allegro_kdl=new robotKDL(_base_names,_ee_names,_g_vec);
+}
+
 
 // Called when an external (string) message is received
 void AllegroNodeImpedance::libCmdCallback(const std_msgs::String::ConstPtr &msg) {
@@ -203,11 +222,19 @@ void AllegroNodeImpedance::computeDesiredTorque() {
 		
 	float my_G[16];
 	int my_index;
+	
+	vector<double> g_vec={0.0,0.0,-18.0};// upright
+	allegroKDL kdl_comp(g_vec);
+// 	vector<double> tau_g;
+// 	tau_g.resize(16,0.0);
+//         tau_g=kdl_comp.get_G(current_position_filtered);
+	
+	
 	//pBHand->SetJointDesiredPosition(current_position_filtered); 
 	pBHand->SetMotionType(eMotionType_GRAVITY_COMP);
 	pBHand->SetJointPosition(current_position_filtered);
-    pBHand->UpdateControl((double) frame * ALLEGRO_CONTROL_TIME_INTERVAL);
-    pBHand->GetJointTorque(desired_torque);    
+        pBHand->UpdateControl((double) frame * ALLEGRO_CONTROL_TIME_INTERVAL);
+        pBHand->GetJointTorque(desired_torque);    
    // pBHand->CalculateGravity();    
     for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
@@ -355,78 +382,75 @@ _G[i][3] = _G[i][3] *0.001f;
 }*/
 
 
-void myGrav()
+// void myGrav()
+// {
+// double g= 9.81f;
+// double mass1[4] = {0.0119, 0.065, 0.0355, 0.0096+0.0168};  //link 1, 2, 3, 4 of finger 1
+// double mass2[4] = {0.0119, 0.065, 0.0355, 0.0096+0.0168};  //link 1, 2, 3, 4 of finger 1
+// double mass3[4] = {0.0119, 0.065, 0.0355, 0.0096+0.0168};  //link 1, 2, 3, 4 of finger 1
+// double mass4[4] = {0.0176, 0.0119, 0.038, 0.0388+0.0168};  //link 1, 2, 3, 4 of thumb
+// 
+// double inet_f1[3][3] = {1.01666658333e-06, 0.0, 0.01,
+// 	 0.0, 6.47677333333e-07, 0.0,
+// 	 0.0, 0.0, 1.01666658333e-06};
+// double inet_f2[3][3] = {7.95654166667e-05, 1.7199e-05, 8.75875e-06,
+// 	 1.7199e-05, 2.47088833333e-05, 2.413125e-05,
+// 	 8.75875e-06, 2.413125e-05, 7.95654166667e-05};
+// 	 
+// double inet_f3[3][3] = {2.63979183333e-05,6.67968e-06,4.783625e-06,
+// 	 6.67968e-06,4.783625e-06,4.783625e-06,
+// 	 4.783625e-06,4.783625e-06,2.63979183333e-05};	 
+// 	 
+// double inet_f4[3][3] = {1.255968e-06+9.68e-07, 1.255968e-06, 1.2936e-06,
+// 	 1.255968e-06, 3.649312e-06+9.68e-07, 1.7622e-06,
+// 	 1.2936e-06, 1.7622e-06, 4.701248e-06+9.68e-07};
+// 	 
+// double inet_t1[3][3] = {1.89273333333e-5,7.16716e-06,5.35568e-06,
+// 	 7.16716e-06,1.43008213333e-05,6.8068e-06,
+// 	 5.35568e-06,6.8068e-06,1.89273333333e-05};	 
+// double inet_t2[3][3] = {4.24250866667e-06,1.032087e-06,1.603525e-06,
+// 	 1.032087e-06,4.52362633333e-06,1.44808125e-06,
+// 	 1.603525e-06,1.44808125e-06,4.24250866667e-06};	
+// double inet_t3[3][3] = {4.30439933333e-05,9.57068e-06,5.1205e-06,
+// 	 9.57068e-06,1.44451933333e-05,1.342825e-05,
+// 	 5.1205e-06,1.342825e-05,4.30439933333e-05};
+// double inet_t4[3][3] = {3.29223173333e-05+9.68e-07,8.042076e-06,5.2283e-06,
+// 	 8.042076e-06,1.47493026667e-5+9.68e-07,1.1283525e-5,
+// 	 5.2283e-06,1.1283525e-5,3.29223173333e-05+9.68e-07};
+//  
+// }
+
+
+vector<double> allegroKDL::get_G(int idx,vector<double> q)
 {
-double g= 9.81f;
-double mass1[4] = {0.0119, 0.065, 0.0355, 0.0096+0.0168};  //link 1, 2, 3, 4 of finger 1
-double mass2[4] = {0.0119, 0.065, 0.0355, 0.0096+0.0168};  //link 1, 2, 3, 4 of finger 1
-double mass3[4] = {0.0119, 0.065, 0.0355, 0.0096+0.0168};  //link 1, 2, 3, 4 of finger 1
-double mass4[4] = {0.0176, 0.0119, 0.038, 0.0388+0.0168};  //link 1, 2, 3, 4 of thumb
+  // send only joints of idx finger:
 
-double inet_f1[3][3] = {1.01666658333e-06, 0.0, 0.01,
-	 0.0, 6.47677333333e-07, 0.0,
-	 0.0, 0.0, 1.01666658333e-06};
-double inet_f2[3][3] = {7.95654166667e-05, 1.7199e-05, 8.75875e-06,
-	 1.7199e-05, 2.47088833333e-05, 2.413125e-05,
-	 8.75875e-06, 2.413125e-05, 7.95654166667e-05};
-	 
-double inet_f3[3][3] = {2.63979183333e-05,6.67968e-06,4.783625e-06,
-	 6.67968e-06,4.783625e-06,4.783625e-06,
-	 4.783625e-06,4.783625e-06,2.63979183333e-05};	 
-	 
-double inet_f4[3][3] = {1.255968e-06+9.68e-07, 1.255968e-06, 1.2936e-06,
-	 1.255968e-06, 3.649312e-06+9.68e-07, 1.7622e-06,
-	 1.2936e-06, 1.7622e-06, 4.701248e-06+9.68e-07};
-	 
-double inet_t1[3][3] = {1.89273333333e-5,7.16716e-06,5.35568e-06,
-	 7.16716e-06,1.43008213333e-05,6.8068e-06,
-	 5.35568e-06,6.8068e-06,1.89273333333e-05};	 
-double inet_t2[3][3] = {4.24250866667e-06,1.032087e-06,1.603525e-06,
-	 1.032087e-06,4.52362633333e-06,1.44808125e-06,
-	 1.603525e-06,1.44808125e-06,4.24250866667e-06};	
-double inet_t3[3][3] = {4.30439933333e-05,9.57068e-06,5.1205e-06,
-	 9.57068e-06,1.44451933333e-05,1.342825e-05,
-	 5.1205e-06,1.342825e-05,4.30439933333e-05};
-double inet_t4[3][3] = {3.29223173333e-05+9.68e-07,8.042076e-06,5.2283e-06,
-	 8.042076e-06,1.47493026667e-5+9.68e-07,1.1283525e-5,
-	 5.2283e-06,1.1283525e-5,3.29223173333e-05+9.68e-07};
-	 
-
-  // initialize kdl class:
-  // load robot from robot_description:
-  /*KDL::JntArray q(joint_pos.size());
-  KDL::JntArray tau_g(joint_pos.size());
-  
-  q.data = joint_pos;
-  dyn_solvers_[chain_idx]->JntToGravity(q, tau_g);
-  tau_g_ = tau_g.data;*/
-  
-    
-  //q.data =  current_position_filtered;
-  //dyn_solvers_[chain_idx]->JntToGravity(current_position_filtered, tau_g);
-  //tau_g_ = tau_g.data;
-  
- 
- /*vector<double> g_vec={0.0,0.0,-9.8}; 
- manipulator_kdl::robotKDL lbr4_("robot_description",n,base_names,ee_names,g_vec);*/
- /* cerr<<"Created KDL model"<<endl;
-  Eigen::VectorXd j_pos;
-  j_pos.resize(7);
-  j_pos.setZero();
-  int ch=0;
-  bool rpy=true;
-  Eigen::VectorXd ee_pose;
-  lbr4_.getFK(ch,j_pos,ee_pose,rpy);
-  cerr<<ee_pose<<endl;
-  Eigen::VectorXd tau_g;
-  lbr4_.getGtau(0,j_pos,tau_g);
-  cerr<<tau_g<<endl;*/	 	
-  
-  
-  /*vector<double> g_vec={0.0,-18.0,0.0}; // in-grasp box 
-  //vector<double> g_vec={0.0,0.0,-18.0};// upright
-  allegroKDL kdl_comp(g_vec);
-  vector<double> tau_g;
-  tau_g.resize(16,0.0); */
-
+  _q_finger.resize(4);
+  for (int i =0;i<4;i++)
+    {
+      _q_finger[i]=q[idx*4+i];
+    }
+  return _allegro_kdl->getGtau(idx,_q_finger);
 }
+
+vector<double> allegroKDL::get_G(vector<double> q)
+{
+  _tau_g.resize(16);
+  // send only joints of idx finger:
+  for (int j=0;j<4;j++)
+    {
+      _q_finger.resize(4);
+      for (int i =0;i<4;i++)
+	{
+	  _q_finger[i]=q[j*4+i];
+	}
+      _tau_g_finger=_allegro_kdl->getGtau(j,_q_finger);
+      for (int i =0;i<4;i++)
+	{
+	  _tau_g[j*4+i]=_tau_g_finger[i];
+	}
+    }
+  return _tau_g;
+}
+
+

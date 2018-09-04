@@ -15,6 +15,11 @@
 //#include "std_msgs/String.h"
 #include "std_msgs/Float64MultiArray.h" //VRG
 
+#include "ll4ma_kdl/manipulator_kdl/robot_kdl_bck.h"
+#include <ros/package.h>
+
+using namespace manipulator_kdl_bck;
+
 // Joint-space PD control of the Allegro hand.
 //
 // Allows you to save a position and command it to the hand controller.
@@ -33,9 +38,7 @@ class AllegroNodeImpedance : public AllegroNode {
   // position, or saves the grasp in order to go into PD control mode. Also
   // can turn the hand off.
   void libCmdCallback(const std_msgs::String::ConstPtr &msg);
-
-  void setJointCallback(const sensor_msgs::JointState &msg);
-  
+  void setJointCallback(const sensor_msgs::JointState &msg);  
   void setImpedanceCallback(const allegro_hrii::StiffControl &msg);  //VRG
 
   // Loads all gains and initial positions from the parameter server.
@@ -44,8 +47,8 @@ class AllegroNodeImpedance : public AllegroNode {
   // PD control happens here.
   void computeDesiredTorque();
   BHand *pBHand = NULL;
-
- protected:
+  
+  protected:
   // Handles defined grasp commands (std_msgs/String).
   ros::Subscriber lib_cmd_sub;
 
@@ -75,11 +78,32 @@ const std::string DESIRED_IMPEDANCE_TOPIC = "allegroHand/impedance_cmd";
 const std::string GRAVITY_STATE_TOPIC = "allegroHand/gravity_state";
 // Added VRG
 
+class allegroKDL
+{
+ public:
+  allegroKDL(vector<double> g_vec);// constructor- builds kdl chain
 
-// class AllegroNode {
-// protected:
-//  ros::Publisher gravity_mine_pub; //VRG 
-//  std_msgs::Float64MultiArray gravity_mine; //VRG
-// };
+    // Dynamic functions:
+  // gravity compensation
+   vector<double> get_G(vector<double> q);
+  // Yay! function overloading!
+  vector<double> get_G(int idx,vector<double> q);
+ 
+ private:
+  vector<double> _g_vec;//={0.0,0.0,-9.8};
+  string _urdf_file;// = ros::package::getPath("ll4ma_robots_description");
+  
+  vector<string> _ee_names;//={"palm_link","index_tip","middle_tip","ring_tip","thumb_tip"};
+  vector<string> _base_names;//={"base_link","base_link","base_link","base_link","base_link"};
+  robotKDL* _allegro_kdl;
+  vector<double> _q_finger;
+  vector<double> _tau_g_finger;
+  vector<double> _tau_g;
+  double delta_q;
+  
+};
+
+
+
 
 #endif  // __ALLEGRO_NODE_GRAV_H__

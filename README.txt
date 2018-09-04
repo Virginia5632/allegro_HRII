@@ -1,4 +1,5 @@
-Apart from adding this package to the website installation (see below) you have to:
+To have the full installation:
+- Follow instructions to create an original allegro_hand_ros_catkin as in the website
 
 - Change the "zero.yaml" in /allegro_hand_ros_catkin/src/allegro_hand_parameters according to the specific hand encoders offset
 
@@ -17,6 +18,10 @@ Apart from adding this package to the website installation (see below) you have 
 #define PWM_LIMIT_GLOBAL_8V 800.0 // maximum: 1200
 #define PWM_LIMIT_GLOBAL_24V 500.0
 
+- Donwload "allegro_hrii" and copy it in allegro_hand_ros_catkin/src
+
+- Do >>git clone https://bitbucket.org/robot-learning/ll4ma_kdl.git to get the library for the robot from Balakumar Sundaralingam work into the main src file of "/allegro_hand_ros_catkin"
+
 
 - To git:
 
@@ -26,7 +31,7 @@ git commit -m "first commit"   --> commit
 git remote add origin https://github.com/Virginia5632/allegro_hrii.git
 git push -u origin master  --> push to the web
 
-git gui -->  wizard to commit and push easier
+git gui -->  wizard to commit and push easier (FIRST go to "allegro_hrii" folder)
 
 git stash --> To go back to website version
 git stash pop --> To undo stash
