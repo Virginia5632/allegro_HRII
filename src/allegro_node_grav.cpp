@@ -1,7 +1,5 @@
 #include "allegro_node_grav.h"
 
-#include <ros/package.h>
-
 #define RADIANS_TO_DEGREES(radians) ((radians) * (180.0 / M_PI))
 #define DEGREES_TO_RADIANS(angle) ((angle) / 180.0 * M_PI)
 
@@ -221,25 +219,37 @@ void AllegroNodeImpedance::computeDesiredTorque() {
 	mutex->lock();  
 		
 	float my_G[16];
+	vector<double> my_G_balak;
+	my_G_balak.resize(16,0.0);		
+	my_G_balak=myGrav(current_position_filtered);
+	
+	float new_my_G[16]; // convert from vector double to array of floats 
+        for (int i =0;i<4;i++)
+	{
+	  new_my_G[i]=my_G_balak[i];
+	}
+	
 	int my_index;
-	
-	vector<double> g_vec={0.0,0.0,-18.0};// upright
-	allegroKDL kdl_comp(g_vec);
-// 	vector<double> tau_g;
-// 	tau_g.resize(16,0.0);
-//         tau_g=kdl_comp.get_G(current_position_filtered);
-	
-	
 	//pBHand->SetJointDesiredPosition(current_position_filtered); 
-	pBHand->SetMotionType(eMotionType_GRAVITY_COMP);
-	pBHand->SetJointPosition(current_position_filtered);
-        pBHand->UpdateControl((double) frame * ALLEGRO_CONTROL_TIME_INTERVAL);
-        pBHand->GetJointTorque(desired_torque);    
-   // pBHand->CalculateGravity();    
-    for (int i = 0; i < 4; i++) {
+// 	pBHand->SetMotionType(eMotionType_GRAVITY_COMP);
+// 	pBHand->SetJointPosition(current_position_filtered);
+//         pBHand->UpdateControl((double) frame * ALLEGRO_CONTROL_TIME_INTERVAL);
+//         pBHand->GetJointTorque(desired_torque);    
+//    // pBHand->CalculateGravity();    
+//     for (int i = 0; i < 4; i++) {
+// 		for (int j = 0; j < 4; j++) {
+// 			my_index=(i+1)*4-4+j;
+// 			my_G[my_index]=desired_torque[my_index];
+// 			//my_G[my_index]=pBHand->_G[i][j];
+// 			gravity_mine.data[my_index]=my_G[my_index];			
+// 		}
+// 	}	
+// 	gravity_mine_pub.publish(gravity_mine);
+	
+	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
 			my_index=(i+1)*4-4+j;
-			my_G[my_index]=desired_torque[my_index];
+			my_G[my_index]=new_my_G[my_index];
 			//my_G[my_index]=pBHand->_G[i][j];
 			gravity_mine.data[my_index]=my_G[my_index];			
 		}
@@ -343,47 +353,40 @@ int main(int argc, char **argv) {
 }
 
 
-/*void myGrav()
+
+vector<double> allegroKDL::get_G(vector<double> q)
 {
-double g = 9.81f;
-double mass1[4] = {_mass[0][0], _mass[1][0], _mass[2][0], _mass[3][0]};
-double mass2[4] = {_mass[0][1], _mass[1][1], _mass[2][1], _mass[3][1]};
-double mass3[4] = {_mass[0][2], _mass[1][2], _mass[2][2], _mass[3][2]};
-double mass4[4] = {_mass[0][3], _mass[1][3], _mass[2][3], _mass[3][3]};
-
-_G[0][0] = 0;
-_G[0][1] = -27.0f*g*mass2[0]*S2_C[0]+g*mass3[0]*(-25.886f*S23_C[0]+0.137f*C23_C[0]-54.0f*S2_C[0])+g*mass4[0]*(-20.571f*S234_C[0]+0.193f*C234_C[0]-38.4f*S23_C[0]-54.0f*S2_C[0]);
-_G[0][2] = g*mass3[0]*(-25.886f*S23_C[0]+0.137f*C23_C[0])+g*mass4[0]*(-20.571f*S234_C[0]+0.193f*C234_C[0]-38.4f*S23_C[0]);
-_G[0][3] = g*mass4[0]*(-20.571f*S234_C[0]+0.193f*C234_C[0]);
-
-_G[1][0] = 0;
-_G[1][1] = -27.0f*g*mass2[1]*S2_C[1]+g*mass3[1]*(-25.886f*S23_C[1]+0.137f*C23_C[1]-54.0f*S2_C[1])+g*mass4[1]*(-20.571f*S234_C[1]+0.193f*C234_C[1]-38.4f*S23_C[1]-54.0f*S2_C[1]);
-_G[1][2] = g*mass3[1]*(-25.886f*S23_C[1]+0.137f*C23_C[1])+g*mass4[1]*(-20.571f*S234_C[1]+0.193f*C234_C[1]-38.4f*S23_C[1]);
-_G[1][3] = g*mass4[1]*(-20.571f*S234_C[1]+0.193f*C234_C[1]);
-
-_G[2][0] = g*mass1[2]*(-0.049473f*C1_C[2]-0.005139f*S1_C[2])+2.3517f*g*mass2[2]*C1_C[2]*S2_C[2]+0.0871f*g*mass3[2]*C1_C[2]*(25.886f*S23_C[2]-0.137f*C23_C[2]+54.0f*S2_C[2])+g*mass4[2]*(0.0871f*C1_C[2]*(20.571f*S234_C[2]-0.193f*C234_C[2]+38.4f*S23_C[2]+54.0f*S2_C[2])-0.001742f*S1_C[2]);
-_G[2][1] = g*mass2[2]*(2.3517f*S1_C[2]*C2_C[2]-26.8974f*S2_C[2])+g*mass3[2]*(0.0871f*S1_C[2]*(25.886f*C23_C[2]+0.137f*S23_C[2]+54.0f*C2_C[2])-25.78763f*S23_C[2]+0.136479f*C23_C[2]-53.7948f*S2_C[2])+g*mass4[2]*(0.0871f*S1_C[2]*(20.571f*C234_C[2]+0.193f*S234_C[2]+38.4f*C23_C[2]+54.0f*C2_C[2])-20.49283f*S234_C[2]+0.192267f*C234_C[2]-38.25408f*S23_C[2]-53.7948f*S2_C[2]);
-_G[2][2] = g*mass3[2]*(0.0871f*S1_C[2]*(25.886f*C23_C[2]+0.137f*S23_C[2])-25.78763f*S23_C[2]+0.136479f*C23_C[2])+g*mass4[2]*(0.0871f*S1_C[2]*(20.571f*C234_C[2]+0.193f*S234_C[2]+38.4f*C23_C[2])-20.49283f*S234_C[2]+0.192267f*C234_C[2]-38.25408f*S23_C[2]);
-_G[2][3] = g*mass4[2]*(0.0871f*S1_C[2]*(20.571f*C234_C[2]+0.193f*S234_C[2])-20.49283f*S234_C[2]+0.192267f*C234_C[2]);
-
-_G[3][0] = (g*mass1[3]*(2110433.0f*C1_C[3] + 2516319.0f*S1_C[3]))/2500000.0f + g*mass4[3]*((871.0f*C1_C[3]*(257.0f*S2_C[3]*S3_C[3] - 685.0f*C34_C[3]*S2_C[3] + 62570.0f*S34_C[3]*S2_C[3] + 25.0f))/50000000.0f + (871*S1_C[3]*(62570.0f*C34_C[3] + 685.0f*S34_C[3] + 257.0f*C3_C[3] + 274.0f))/50000000.0f) + (g*mass2[3]*(43550.0f*C1_C[3] + 51107667.0f*S1_C[3] - 513890.0f*C1_C[3]*C2_C[3] - 4947280.0f*C1_C[3]*S2_C[3]))/100000000.0f + g*mass3[3]*((871.0f*S1_C[3]*(62570.0f*C3_C[3] + 685.0f*S3_C[3] + 274.0f))/50000000.0f + (871.0f*C1_C[3]*(12514.0f*S2_C[3]*S3_C[3] - 137.0f*C3_C[3]*S2_C[3] + 5.0f))/10000000.0f);
-_G[3][1] = (g*mass2[3]*(5877580.0f*C2_C[3] + 56584160.0f*S2_C[3] - 4947280.0f*C2_C[3]*S1_C[3] + 513890.0f*S1_C[3]*S2_C[3]))/100000000.0f - g*mass4[3]*((1280117.0f*S2_C[3]*S3_C[3])/25000000.0f - (871.0f*S1_C[3]*(257.0f*C2_C[3]*S3_C[3] - 685.0f*C34_C[3]*C2_C[3] + 62570.0f*S34_C[3]*C2_C[3]))/50000000.0f - (682397.0f*C34_C[3]*S2_C[3])/5000000.0f + (31166117.0f*S34_C[3]*S2_C[3])/2500000.0f) - g*mass3[3]*((31166117.0f*S2_C[3]*S3_C[3])/2500000.0f - (682397.0f*C3_C[3]*S2_C[3])/5000000.0f + (871.0f*S1_C[3]*(137.0f*C2_C[3]*C3_C[3] - 12514.0f*C2_C[3]*S3_C[3]))/10000000.0f);
-_G[3][2] = g*mass3[3]*((31166117.0f*C2_C[3]*C3_C[3])/2500000.0f - (871.0f*C1_C[3]*(685.0f*C3_C[3] - 62570.0f*S3_C[3]))/50000000.0f + (682397.0f*C2_C[3]*S3_C[3])/5000000.0f + (871.0f*S1_C[3]*(12514.0f*C3_C[3]*S2_C[3] + 137.0f*S2_C[3]*S3_C[3]))/10000000.0f) + g*mass4[3]*((1280117.0f*C2_C[3]*C3_C[3])/25000000.0f + (871.0f*S1_C[3]*(257.0f*C3_C[3]*S2_C[3] + 62570.0f*C34_C[3]*S2_C[3] + 685.0f*S34_C[3]*S2_C[3]))/50000000.0f + (31166117.0f*C34_C[3]*C2_C[3])/2500000.0f + (682397.0f*S34_C[3]*C2_C[3])/5000000.0f + (871.0f*C1_C[3]*(62570.0f*S34_C[3] - 685.0f*C34_C[3] + 257.0f*S3_C[3]))/50000000.0f);
-_G[3][3] = g*mass4[3]*((871.0f*S1_C[3]*(62570.0f*C34_C[3]*S2_C[3] + 685.0f*S34_C[3]*S2_C[3]))/50000000.0f - (871.vicky5632
-* 0f*C1_C[3]*(685.0f*C34_C[3] - 62570.0f*S34_C[3]))/50000000.0f + (31166117.0f*C34_C[3]*C2_C[3])/2500000.0f + (682397.0f*S34_C[3]*C2_C[3])/5000000.0f);
-
-for (int i=0; i<NOF; i++)
-{
-_G[i][0] = _G[i][0] *0.001f;
-_G[i][1] = _G[i][1] *0.001f;
-_G[i][2] = _G[i][2] *0.001f;
-_G[i][3] = _G[i][3] *0.001f;
+  _tau_g.resize(16);
+  // send only joints of idx finger:
+  for (int j=0;j<4;j++)
+    {
+      _q_finger.resize(4);
+      for (int i =0;i<4;i++)
+	{
+	  _q_finger[i]=q[j*4+i];
+	}
+      _tau_g_finger=_allegro_kdl->getGtau(j,_q_finger);
+      for (int i =0;i<4;i++)
+	{
+	  _tau_g[j*4+i]=_tau_g_finger[i];
+	}
+    }
+  return _tau_g;
 }
-}*/
 
 
-// void myGrav()
-// {
+vector<double> myGrav (double* q)
+{
+ vector<double> g_vec={18.6,0.0,0.0}; // in-grasp box 
+ allegroKDL kdl_comp(g_vec);
+ vector<double> tau_g;
+ tau_g.resize(16,0.0);
+ 
+ std::vector<double> q_vector(q, q + 16);
+ tau_g=kdl_comp.get_G(q_vector);
+ 
+return tau_g;
+ 
 // double g= 9.81f;
 // double mass1[4] = {0.0119, 0.065, 0.0355, 0.0096+0.0168};  //link 1, 2, 3, 4 of finger 1
 // double mass2[4] = {0.0119, 0.065, 0.0355, 0.0096+0.0168};  //link 1, 2, 3, 4 of finger 1
@@ -417,40 +420,11 @@ _G[i][3] = _G[i][3] *0.001f;
 // double inet_t4[3][3] = {3.29223173333e-05+9.68e-07,8.042076e-06,5.2283e-06,
 // 	 8.042076e-06,1.47493026667e-5+9.68e-07,1.1283525e-5,
 // 	 5.2283e-06,1.1283525e-5,3.29223173333e-05+9.68e-07};
-//  
-// }
+//  vector<double> g_vec={0.0,0.0,-18.0};// upright
 
-
-vector<double> allegroKDL::get_G(int idx,vector<double> q)
-{
-  // send only joints of idx finger:
-
-  _q_finger.resize(4);
-  for (int i =0;i<4;i++)
-    {
-      _q_finger[i]=q[idx*4+i];
-    }
-  return _allegro_kdl->getGtau(idx,_q_finger);
-}
-
-vector<double> allegroKDL::get_G(vector<double> q)
-{
-  _tau_g.resize(16);
-  // send only joints of idx finger:
-  for (int j=0;j<4;j++)
-    {
-      _q_finger.resize(4);
-      for (int i =0;i<4;i++)
-	{
-	  _q_finger[i]=q[j*4+i];
-	}
-      _tau_g_finger=_allegro_kdl->getGtau(j,_q_finger);
-      for (int i =0;i<4;i++)
-	{
-	  _tau_g[j*4+i]=_tau_g_finger[i];
-	}
-    }
-  return _tau_g;
-}
-
-
+ // create kdl controller instance:
+  //vector<double> g_vec={0.0,-18.0,0.0}; // in-grasp box 
+  //vector<double> g_vec={0.0,0.0,-18.0};// upright
+ 
+	
+ }

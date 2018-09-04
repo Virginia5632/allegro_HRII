@@ -103,6 +103,8 @@ class allegroKDL
   
 };
 
+vector<double> myGrav(double* q);
+
 
 
 
