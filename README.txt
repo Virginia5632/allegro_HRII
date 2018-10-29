@@ -1,40 +1,80 @@
-To have the full installation:
-- Follow instructions to create an original allegro_hand_ros_catkin as in the website
+1) INSTALL PCAN PROPERLY
+	https://github.com/felixduvallet/allegro-hand-ros
+	Installing the PCAN driver
+	Before using the hand, you must install the pcan drivers. This assumes you have a peak-systems pcan to usb adapter.
+    	- Install these packages in the "home" directory. Change "INDIGO"  for "KINETIC"
+   	$ sudo apt-get install libpopt-dev ros-indigo-libpcan
 
-- Change the "zero.yaml" in /allegro_hand_ros_catkin/src/allegro_hand_parameters according to the specific hand encoders offset
+    	- Download latest drivers in the home directory: http://www.peak-system.com/fileadmin/media/linux/index.htm#download
+        - Install the drivers from peak folder.
+        $ cd ~/peak-linux-driver-8.6.0
+	$ make clean; make NET=NO_NETDEV_SUPPORT
+	$ sudo make install
+	$ sudo /sbin/modprobe pcan
 
-- Change /allegro_hand_ros_catkin/src/allegro_hand_driver/src/AllegroHandDrv.cpp from previous limits to allow more power at the thumb and other joints. Set to:
+	- Test that the interface is installed properly with:
+	$ cat /proc/pcan
+          You should see some stuff streaming.
+	
+	- When the hand is connected, you should see pcanusb0 or pcanusb1 in the list of available interfaces:
+	$ ls -l /dev/pcan*
+	- If you do not see any available files, you may need to run:
+ 	- sudo ./driver/pcan_make_devices 2
+	from the downloaded pcan folder: this theoretically creates the devices files if the system has not done it automatically.
 
-#define PWM_LIMIT_ROLL 250.0*1.5
-#define PWM_LIMIT_NEAR 450.0*1.5
-#define PWM_LIMIT_MIDDLE 300.0*1.5
-#define PWM_LIMIT_FAR 400*1.5 // 190.0*1.5
+2) MAKE FULL INSTALLATION
+	- Follow instructions to create an original allegro_hand_ros_catkin as in the website
+		http://wiki.ros.org/allegro_hand_ros#Using_ROS
+		Can install original or the one from https://github.com/felixduvallet/allegro-hand-ros
+	- Change the "zero.yaml" in /allegro_hand_ros_catkin/src/allegro_hand_parameters according to the specific hand encoders offset
+	- Change /allegro_hand_ros_catkin/src/allegro_hand_driver/src/AllegroHandDrv.cpp from previous limits to allow more power at the thumb and other joints. Set to:
+		#define PWM_LIMIT_ROLL 250.0*1.5
+		#define PWM_LIMIT_NEAR 450.0*1.5
+		#define PWM_LIMIT_MIDDLE 300.0*1.5
+		#define PWM_LIMIT_FAR 400*1.5 // 190.0*1.5
 
-#define PWM_LIMIT_THUMB_ROLL 400*1.5// 350.0*1.5
-#define PWM_LIMIT_THUMB_NEAR 400*1.5 // 350.0*1.5 // joint 2
-#define PWM_LIMIT_THUMB_MIDDLE 400*1.5 //180.0*1.5 // joint 1 
-#define PWM_LIMIT_THUMB_FAR 400.0*1.5 //180.0*1.5 // joint 0
+		#define PWM_LIMIT_THUMB_ROLL 400*1.5// 350.0*1.5
+		#define PWM_LIMIT_THUMB_NEAR 400*1.5 // 350.0*1.5 // joint 2
+		#define PWM_LIMIT_THUMB_MIDDLE 400*1.5 //180.0*1.5 // joint 1 
+		#define PWM_LIMIT_THUMB_FAR 400.0*1.5 //180.0*1.5 // joint 0
 
-#define PWM_LIMIT_GLOBAL_8V 800.0 // maximum: 1200
-#define PWM_LIMIT_GLOBAL_24V 500.0
+		#define PWM_LIMIT_GLOBAL_8V 800.0 // maximum: 1200
+		#define PWM_LIMIT_GLOBAL_24V 500.0
 
-- Donwload "allegro_hrii" and copy it in allegro_hand_ros_catkin/src
+	- Download "allegro_hrii" and copy it in allegro_hand_ros_catkin/src
+		https://github.com/Virginia5632/allegro_hrii
+	- Do >>git clone https://bitbucket.org/robot-learning/ll4ma_kdl.git to get the library for the robot from Balakumar Sundaralingam work into the main src file of "/allegro_hand_ros_catkin"
 
-- Do >>git clone https://bitbucket.org/robot-learning/ll4ma_kdl.git to get the library for the robot from Balakumar Sundaralingam work into the main src file of "/allegro_hand_ros_catkin"
+2) GO TO RIGHT DIRECTORY AND SOURCE PROPERLY
+	$ cd ~/allegro_hand_ros_catkin and do 
+	$ gedit ~/.bashrc
+	Uncomment the line source /home/virginia/allegro_hand_ros_catkin/devel/setup.bash
+	$ source /home/virginia/allegro_hand_ros_catkin/devel/setup.bash
+	$ catkin_make
+
+3) RUN BASIC CODE 
+	$ roslaunch allegro_hand_controllers allegro_hand.launch HAND:=right CONTROLLER:=grasp
+	Try different grasps to check it works       
 
 
-- To git:
+/home/virginia/.matlab/R2017a/javaclasspath.txt
 
-cd allegro_hrii/ --> Go to package folder
-git add -A --> Add everything inside the folder to commit later
-git commit -m "first commit"   --> commit
-git remote add origin https://github.com/Virginia5632/allegro_hrii.git
-git push -u origin master  --> push to the web
+////////////////////////////////////////////
+/////////////////// EXTRAS /////////////////
+////////////////////////////////////////////
 
-git gui -->  wizard to commit and push easier (FIRST go to "allegro_hrii" folder)
+- TO GIT
 
-git stash --> To go back to website version
-git stash pop --> To undo stash
+	cd src/allegro_hrii/ --> Go to package folder
+	git add -A --> Add everything inside the folder to commit later
+	git commit -m "first commit"   --> commit
+	git remote add origin https://github.com/Virginia5632/allegro_hrii.git
+	git push -u origin master  --> push to the web
+
+	git gui -->  wizard to commit and push easier (FIRST go to "allegro_hrii" folder)
+
+	git stash --> To go back to website version
+	git stash pop --> To undo stash
 
 ////////////////////////////////////////////////
 /////////// SOME NOTES FORM THE PAST ///////////

@@ -59,7 +59,11 @@ class AllegroNodeImpedance : public AllegroNode {
   // Added VRG
   // Subscribe to desired impedance states
   ros::Subscriber impedance_cmd_sub;
+  //ros::Subscriber RotArmEE_cmd_sub;
+  ros::Subscriber franka_states;
   // Added VRG
+  ros::Publisher gravity_mine_pub; //VRG 
+  std_msgs::Float64MultiArray gravity_mine; //VRG
   
   // If this flag is true, the hand will be controlled (either in joint position
   // or joint torques). If false, desired torques will all be zero.
@@ -67,14 +71,12 @@ class AllegroNodeImpedance : public AllegroNode {
   
   bool imp_received=false;  //VRG If this flag is set the hand will be controlled in impedance
   
-  ros::Publisher gravity_mine_pub; //VRG 
-  std_msgs::Float64MultiArray gravity_mine; //VRG
-  
 };
 
 
 // Added VRG
 const std::string DESIRED_IMPEDANCE_TOPIC = "allegroHand/impedance_cmd";
+//const std::string ARM_EE_TOPIC = "allegroHand/RotArmEE_cmd";
 const std::string GRAVITY_STATE_TOPIC = "allegroHand/gravity_state";
 // Added VRG
 

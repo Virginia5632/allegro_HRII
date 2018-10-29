@@ -377,7 +377,17 @@ vector<double> allegroKDL::get_G(vector<double> q)
 
 vector<double> myGrav (double* q)
 {
- vector<double> g_vec={18.6,0.0,0.0}; // in-grasp box 
+//  //vector<double> g_vec={0.0,-18.0,0.0}; // in-grasp box 
+//  //vector<double> g_vec={0.0,0.0,-18.0};// upright
+//  vector<double> g_vec={18.6,0.0,0.0}; // in-grasp box 
+ 
+ vector<double> g_vec={0.0,0.0,-9.81}; // in-grasp box 
+//  float TransfEE[16];
+//  TransfEE=franka_states.O_T_EE;
+//  g_vec[0]=TransfEE[0]*g_vec[0]+TransfEE[1]*g_vec[1]+TransfEE[2]*g_vec[2];
+//  g_vec[1]=TransfEE[4]*g_vec[0]+TransfEE[5]*g_vec[1]+TransfEE[6]*g_vec[2];
+//  g_vec[2]=TransfEE[8]*g_vec[0]+TransfEE[9]*g_vec[1]+TransfEE[10]*g_vec[2];
+ 
  allegroKDL kdl_comp(g_vec);
  vector<double> tau_g;
  tau_g.resize(16,0.0);
