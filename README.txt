@@ -157,7 +157,10 @@
 		scan = receive(ActualQ,0.1);
 		scanQ=scan.Position;
 
-
+- USING GRAVITY COMPENSATION
+	- If you want to use the gravity compensation from the allegro code, you have to girst make the corresponding function public
+		1) Go to /home/virginia/allegro_hand_ros_catkin/src/bhand/include/bhand
+		2) Change void CalculateGravity(); from "Private" to "Public"
 
 
 	

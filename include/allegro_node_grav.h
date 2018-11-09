@@ -1,10 +1,10 @@
 #ifndef __ALLEGRO_NODE_GRAV_H__
 #define __ALLEGRO_NODE_GRAV_H__
 
-
 #include "/home/virginia/allegro_hand_ros_catkin/src/allegro_hand_controllers/src/allegro_node.h"
 
 #include "allegro_hrii/StiffControl.h" //VRG
+#include "allegro_hrii/BaseRotate.h" //VRG
 
 #include "bhand/BHand.h"
 
@@ -15,10 +15,10 @@
 //#include "std_msgs/String.h"
 #include "std_msgs/Float64MultiArray.h" //VRG
 
-#include "ll4ma_kdl/manipulator_kdl/robot_kdl_bck.h"
+//#include "ll4ma_kdl/manipulator_kdl/robot_kdl_bck.h"
 #include <ros/package.h>
 
-using namespace manipulator_kdl_bck;
+//using namespace manipulator_kdl_bck;
 
 // Joint-space PD control of the Allegro hand.
 //
@@ -40,7 +40,8 @@ class AllegroNodeImpedance : public AllegroNode {
   void libCmdCallback(const std_msgs::String::ConstPtr &msg);
   void setJointCallback(const sensor_msgs::JointState &msg);  
   void setImpedanceCallback(const allegro_hrii::StiffControl &msg);  //VRG
-
+  void setBaseRotateCallback(const allegro_hrii::BaseRotate &msg);  //VRG
+  void ComputeBaseJacobian();
   // Loads all gains and initial positions from the parameter server.
   void initController(const std::string &whichHand);
 
@@ -59,6 +60,7 @@ class AllegroNodeImpedance : public AllegroNode {
   // Added VRG
   // Subscribe to desired impedance states
   ros::Subscriber impedance_cmd_sub;
+  ros::Subscriber base_cmd_sub;
   //ros::Subscriber RotArmEE_cmd_sub;
   ros::Subscriber franka_states;
   // Added VRG
@@ -70,17 +72,19 @@ class AllegroNodeImpedance : public AllegroNode {
   bool control_hand_ = false;
   
   bool imp_received=false;  //VRG If this flag is set the hand will be controlled in impedance
+  bool rot_received=false;  //VRG If this flag is set the a new base has been set for the hand
   
 };
 
 
 // Added VRG
 const std::string DESIRED_IMPEDANCE_TOPIC = "allegroHand/impedance_cmd";
+const std::string DESIRED_BASE_TOPIC = "allegroHand/base_cmd";
 //const std::string ARM_EE_TOPIC = "allegroHand/RotArmEE_cmd";
 const std::string GRAVITY_STATE_TOPIC = "allegroHand/gravity_state";
 // Added VRG
 
-class allegroKDL
+/*class allegroKDL
 {
  public:
   allegroKDL(vector<double> g_vec);// constructor- builds kdl chain
@@ -104,8 +108,9 @@ class allegroKDL
   double delta_q;
   
 };
+*/
 
-vector<double> myGrav(double* q);
+//vector<double> myGrav(double* q);
 
 
 

@@ -173,28 +173,27 @@ void AllegroNodeImpedance::setImpedanceCallback(const allegro_hrii::StiffControl
 }
 
 double RotBaseMine [3][3]; //VRG    
-double JacobBase[24][16]={0}; 
-int myhelp=1; 
+double JacobBase[24][16]={0};
+  /*    JacobBase = new double*[24];      
+      for (int i=0; i < 24; i++) {
+		  for (int j = 0; j < 16; j++)
+            {
+				JacobBase[i][j]=0;
+            }
+     }        */
+
 
 void AllegroNodeImpedance::setBaseRotateCallback(const allegro_hrii::BaseRotate &msg) {
   ROS_WARN("Rotation received");
-  mutex->lock();   
+  mutex->lock();  
+  //vector<double> JacobMine;
+  //JacobMine.resize(384); //24*16, 4 fingers, 3 pos, 3 rot, 16 joints 
     for(int i=0; i<3;i++){
 	  for(int j=0; j<3;j++){
 		  RotBaseMine[i][j]=msg.RotBase[i*3+j];  		  
 	  }
   } 
-  ComputeBaseJacobian();
-		  cout << "My base jacobian is"; 
-		  cout <<  "\n";
-		  for(int i=0; i<24;i++){
-			for(int j=0; j<16;j++){
-			cout << JacobBase[i][j];
-			cout << " ";      
-			}
-			cout <<  "\n";
-		} 
-  rot_received=true;   
+  rot_received=true;     
   mutex->unlock();
 }
 
@@ -628,6 +627,7 @@ void AllegroNodeImpedance::ComputeBaseJacobian(){
 	JacobBase[22][15]=t280;
 	JacobBase[23][15]=t324;
 
+
 }
     
 void AllegroNodeImpedance::computeDesiredTorque() {
@@ -636,15 +636,34 @@ void AllegroNodeImpedance::computeDesiredTorque() {
   // the hand.
   
   //COMPUTE GRAVITY COMP TORQUE ALWAYS    
-	float my_G[16]={0};
-	int my_index;	
+	/*float my_G[16];
+	int my_index;
+			pBHand->SetJointDesiredPosition(current_position_filtered); 
+		 	pBHand->SetMotionType(eMotionType_GRAVITY_COMP);
+		 	pBHand->SetJointPosition(current_position_filtered);
+		         pBHand->UpdateControl((double) frame * ALLEGRO_CONTROL_TIME_INTERVAL);
+		         pBHand->GetJointTorque(desired_torque);    
+		     pBHand->CalculateGravity();    
+		     for (int i = 0; i < 4; i++) {
+		 		for (int j = 0; j < 4; j++) {
+		 			my_index=(i+1)*4-4+j;
+		 			my_G[my_index]=desired_torque[my_index];
+		 			//my_G[my_index]=pBHand->_G[i][j];
+		 			gravity_mine.data[my_index]=my_G[my_index];			
+		 		}
+		 	}	
+		 	gravity_mine_pub.publish(gravity_mine);
+	*/
+	float my_G[16];
+	int my_index;
+	for (int i = 0; i < 16; i++) {
+		my_G[i]=0;
+	}	
 	
 	if (rot_received){ 		 		
 		ComputeBaseJacobian();
-		  
 		double Jtotal_Rot_Transp[16][24]={0};
-		double ext_force[6]={0.0, 0.0, 9.81, 0.0, 0.0, 0.0};
-		//ext_force[2]=-9.81;
+		vector<double> ext_force={0.0,0.0,-9.81, 0.0 , 0.0, 0.0};
 		double Jindex_base[6][4]; //=[Jt_base(1:3,1:4);Jt_base(13:15,1:4)];	
 		double Jmiddle_base[6][4];
 		double Jring_base[6][4];
@@ -661,14 +680,12 @@ void AllegroNodeImpedance::computeDesiredTorque() {
 			Jthumb_base[i+3][j]=JacobBase[i+21][j+12];
 			}
 		}
-				      
 		// Rotate finger Jacobians individually
 		double Jtotal_Rot[24][16]={0};
 		double Jindex_Rot[6][4]; //=[Jt_base(1:3,1:4);Jt_base(13:15,1:4)];	
 		double Jmiddle_Rot[6][4];
 		double Jring_Rot[6][4];
-		double Jthumb_Rot[6][4];	
-		
+		double Jthumb_Rot[6][4];			
 		for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 4; j++) {
 			Jindex_Rot[i][j]=RotBaseMine[i][0]*Jindex_base[0][j]+RotBaseMine[i][1]*Jindex_base[1][j]+RotBaseMine[i][2]*Jindex_base[2][j];
@@ -682,10 +699,8 @@ void AllegroNodeImpedance::computeDesiredTorque() {
 			
 			Jthumb_Rot[i][j]=RotBaseMine[i][0]*Jthumb_base[0][j]+RotBaseMine[i][1]*Jthumb_base[1][j]+RotBaseMine[i][2]*Jthumb_base[2][j];
 			Jthumb_Rot[i+3][j]=RotBaseMine[i][0]*Jthumb_base[3][j]+RotBaseMine[i][1]*Jthumb_base[4][j]+RotBaseMine[i][2]*Jthumb_base[5][j];			
-			
-			}			
-		}					
-			
+			}
+		}		
 		for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 4; j++) {
 				Jtotal_Rot[i][j]=Jindex_Rot[i][j];
@@ -698,66 +713,71 @@ void AllegroNodeImpedance::computeDesiredTorque() {
 				Jtotal_Rot[i+21][j+12]=Jthumb_Rot[i+3][j];
 			}
 		}
-		
 		for (int i = 0; i < 16; i++) {
 			for (int j = 0; j < 24; j++) {
 				Jtotal_Rot_Transp[i][j]=Jtotal_Rot[j][i];
 			}
 		}
 		
-		double massf[4] = {0.0119, 0.065, 0.0355, 0.0096+0.0168};  //link 1, 2, 3, 4 of finger
-		double mf[4];
-		mf[0]=massf[0]+massf[1]+massf[2]+massf[3];
-		mf[1]=massf[1]+massf[2]+massf[3];
-		mf[2]=massf[2]+massf[3];
-		mf[3]=massf[3];
-		double masst[4] = {0.0176, 0.0119, 0.038, 0.0388+0.0168};  //link 1, 2, 3, 4 of thumb
-		double mt[4];
-		mt[0]=masst[0]+masst[1]+masst[2]+masst[3];
-		mt[1]=masst[1]+masst[2]+masst[3];
-		mt[2]=masst[2]+masst[3];
-		mt[3]=masst[3];
 		for (int i = 0; i <4; i++) {
 			//Index
-			my_G[i]=mf[i]*(Jtotal_Rot_Transp[i][0]*ext_force[0]+Jtotal_Rot_Transp[i][1]*ext_force[1]+Jtotal_Rot_Transp[i][2]*ext_force[2]+Jtotal_Rot_Transp[i][12]*ext_force[3]+Jtotal_Rot_Transp[i][13]*ext_force[4]+Jtotal_Rot_Transp[i][14]*ext_force[5]);
+			my_G[i]=Jtotal_Rot_Transp[i][0]*ext_force[0]+Jtotal_Rot_Transp[i][1]*ext_force[1]+Jtotal_Rot_Transp[i][2]*ext_force[2]+Jtotal_Rot_Transp[i][12]*ext_force[3]+Jtotal_Rot_Transp[i][13]*ext_force[4]+Jtotal_Rot_Transp[i][14]*ext_force[5];
 			//Middle
-			my_G[i+4]=mf[i]*(Jtotal_Rot_Transp[i+4][3]*ext_force[0]+Jtotal_Rot_Transp[i+4][4]*ext_force[1]+Jtotal_Rot_Transp[i+4][5]*ext_force[2]+Jtotal_Rot_Transp[i+4][15]*ext_force[3]+Jtotal_Rot_Transp[i+4][16]*ext_force[4]+Jtotal_Rot_Transp[i+4][17]*ext_force[5]);
+			my_G[i+4]=Jtotal_Rot_Transp[i+4][3]*ext_force[0]+Jtotal_Rot_Transp[i+4][4]*ext_force[1]+Jtotal_Rot_Transp[i+4][5]*ext_force[2]+Jtotal_Rot_Transp[i+4][15]*ext_force[3]+Jtotal_Rot_Transp[i+4][16]*ext_force[4]+Jtotal_Rot_Transp[i+4][17]*ext_force[5];
 			//Ring
-			my_G[i+8]=mf[i]*(Jtotal_Rot_Transp[i+8][6]*ext_force[0]+Jtotal_Rot_Transp[i+8][7]*ext_force[1]+Jtotal_Rot_Transp[i+8][8]*ext_force[2]+Jtotal_Rot_Transp[i+8][18]*ext_force[3]+Jtotal_Rot_Transp[i+8][19]*ext_force[4]+Jtotal_Rot_Transp[i+8][20]*ext_force[5]);
+			my_G[i+8]=Jtotal_Rot_Transp[i+8][6]*ext_force[0]+Jtotal_Rot_Transp[i+8][7]*ext_force[1]+Jtotal_Rot_Transp[i+8][8]*ext_force[2]+Jtotal_Rot_Transp[i+8][18]*ext_force[3]+Jtotal_Rot_Transp[i+8][19]*ext_force[4]+Jtotal_Rot_Transp[i+8][20]*ext_force[5];
 			//Thumb
-			my_G[i+12]=mt[i]*(Jtotal_Rot_Transp[i+12][9]*ext_force[0]+Jtotal_Rot_Transp[i+12][10]*ext_force[1]+Jtotal_Rot_Transp[i+12][11]*ext_force[2]+Jtotal_Rot_Transp[i+12][21]*ext_force[3]+Jtotal_Rot_Transp[i+12][22]*ext_force[4]+Jtotal_Rot_Transp[i+12][23]*ext_force[5]);
+			my_G[i+12]=Jtotal_Rot_Transp[i+12][9]*ext_force[0]+Jtotal_Rot_Transp[i+12][10]*ext_force[1]+Jtotal_Rot_Transp[i+12][11]*ext_force[2]+Jtotal_Rot_Transp[i+12][21]*ext_force[3]+Jtotal_Rot_Transp[i+12][22]*ext_force[4]+Jtotal_Rot_Transp[i+12][23]*ext_force[5];
 			
-		}
-		/*if (myhelp==1){
-			cout << "My Grav Torque"; 
-			cout << "\n"; 
-			for (int i = 0; i < 16; i++) {								
-					cout << my_G[i];		
-					cout << " "; 				
-				
+		}				
+	}
+	/*for (int i = 0; i <16; i++) {
+	cout << my_G[i];
+	  cout << " ";
+   }*/
+   //cout <<  "\n";
+	/*else{
+		for (int i = 0; i < 16; i++) {
+			for (int j = 0; j < 24; j++) {
+				Jtotal_Rot_Transp[i][j]=JacobBase[j][i];
 			}
-		cout << "\n"; 	
 		}
-		myhelp=2;*/
-	} //if (rot_received){ 	
-
+	}*/
+		// Compute Gravity cmp torque
+			
+		
+/*	if (rot_received){  
+		vector<double> my_G_balak;	
+		my_G_balak.resize(16,0.0);		
+		my_G_balak=myGrav(current_position_filtered);
+		float new_my_G[16]; // convert from vector double to array of floats 
+			for (int i =0;i<4;i++)
+		{
+		  new_my_G[i]=my_G_balak[i];
+		}
+		int my_index;
+		float my_G[16];
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				my_index=(i+1)*4-4+j;
+				my_G[my_index]=new_my_G[my_index];
+				//my_G[my_index]=pBHand->_G[i][j];
+				gravity_mine.data[my_index]=my_G[my_index];	
+						
+			}
+		}	
+		gravity_mine_pub.publish(gravity_mine);
+	}*/
 	
   // No control: set torques to zero./GRAVITY COMP
   if (((!control_hand_) && (!imp_received)) || ((control_hand_) && (imp_received))) {
      //ROS_INFO_THROTTLE(1.0, "Hand control is false");
     for (int i = 0; i < DOF_JOINTS; i++) {
       //desired_torque[i] = 0.0;
-      desired_torque[i]= my_G[i];   	  
+      desired_torque[i]= my_G[i];    
+	  //cout << my_G[i];
+	  //cout << " ";
     }
-    /*cout << "My Grav Torque"; 
-	cout << "\n"; 
-	for (int i = 0; i < 4; i++) {								
-			cout << my_G[i];		
-			cout << " "; 				
-		}
-	cout << "\n"; 	*/
-	
-    //cout <<  "NO CONTROL";
     //cout <<  "\n";     
     return;
   }
@@ -769,7 +789,6 @@ void AllegroNodeImpedance::computeDesiredTorque() {
       desired_joint_state.effort.size() > 0) {
     ROS_WARN("Error: both positions and torques are specified in the desired "
                      "state. You cannot control both at the same time.");
-                     
     return;
   }
 
@@ -791,8 +810,6 @@ void AllegroNodeImpedance::computeDesiredTorque() {
         desired_torque[i] = desired_joint_state.effort[i];
       }
     }
-    //cout <<  "SENDING TORQUE";
-    //cout <<  "\n";     
     mutex->unlock();
   }
   ////////IMPEDANCE CONTROL
@@ -806,8 +823,6 @@ void AllegroNodeImpedance::computeDesiredTorque() {
                 (k_p[i] * error - k_d[i] * current_velocity_filtered[i])+my_G[i];*/
                 desired_torque[i]= my_G[i]; 
        }     
-    //cout <<  "IMPEDANCE CONTROL";
-    //cout <<  "\n";        
     mutex->unlock();
 	  
   }
@@ -896,4 +911,90 @@ int main(int argc, char **argv) {
 
 
 
+/*vector<double> allegroKDL::get_G(vector<double> q)
+{
+  _tau_g.resize(16);
+  // send only joints of idx finger:
+  for (int j=0;j<4;j++)
+    {
+      _q_finger.resize(4);
+      for (int i =0;i<4;i++)
+	{
+	  _q_finger[i]=q[j*4+i];
+	}
+      _tau_g_finger=_allegro_kdl->getGtau(j,_q_finger);
+      for (int i =0;i<4;i++)
+	{
+	  _tau_g[j*4+i]=_tau_g_finger[i];
+	}
+    }
+  return _tau_g;
+}*/
 
+
+vector<double> myGrav (double* q)
+{
+//  //vector<double> g_vec={0.0,-18.0,0.0}; // in-grasp box 
+//  //vector<double> g_vec={0.0,0.0,-18.0};// upright
+//  vector<double> g_vec={18.6,0.0,0.0}; // in-grasp box 
+ 
+// vector<double> g_vec={0.0,0.0,-9.81}; // in-grasp box 
+ vector<double> g_vec={0.0,0.0,-9.81}; // in-grasp box 
+ 
+//  float TransfEE[16];
+//  TransfEE=franka_states.O_T_EE;
+//  g_vec[0]=TransfEE[0]*g_vec[0]+TransfEE[1]*g_vec[1]+TransfEE[2]*g_vec[2];
+//  g_vec[1]=TransfEE[4]*g_vec[0]+TransfEE[5]*g_vec[1]+TransfEE[6]*g_vec[2];
+//  g_vec[2]=TransfEE[8]*g_vec[0]+TransfEE[9]*g_vec[1]+TransfEE[10]*g_vec[2];
+ 
+/* allegroKDL kdl_comp(g_vec);
+ vector<double> tau_g;
+ tau_g.resize(16,0.0);
+ 
+ std::vector<double> q_vector(q, q + 16);
+ tau_g=kdl_comp.get_G(q_vector);*/
+ 
+ 
+//return tau_g;
+ 
+// double g= 9.81f;
+// double mass1[4] = {0.0119, 0.065, 0.0355, 0.0096+0.0168};  //link 1, 2, 3, 4 of finger 1
+// double mass2[4] = {0.0119, 0.065, 0.0355, 0.0096+0.0168};  //link 1, 2, 3, 4 of finger 1
+// double mass3[4] = {0.0119, 0.065, 0.0355, 0.0096+0.0168};  //link 1, 2, 3, 4 of finger 1
+// double mass4[4] = {0.0176, 0.0119, 0.038, 0.0388+0.0168};  //link 1, 2, 3, 4 of thumb
+// 
+// double inet_f1[3][3] = {1.01666658333e-06, 0.0, 0.01,
+// 	 0.0, 6.47677333333e-07, 0.0,
+// 	 0.0, 0.0, 1.01666658333e-06};
+// double inet_f2[3][3] = {7.95654166667e-05, 1.7199e-05, 8.75875e-06,
+// 	 1.7199e-05, 2.47088833333e-05, 2.413125e-05,
+// 	 8.75875e-06, 2.413125e-05, 7.95654166667e-05};
+// 	 
+// double inet_f3[3][3] = {2.63979183333e-05,6.67968e-06,4.783625e-06,
+// 	 6.67968e-06,4.783625e-06,4.783625e-06,
+// 	 4.783625e-06,4.783625e-06,2.63979183333e-05};	 
+// 	 
+// double inet_f4[3][3] = {1.255968e-06+9.68e-07, 1.255968e-06, 1.2936e-06,
+// 	 1.255968e-06, 3.649312e-06+9.68e-07, 1.7622e-06,
+// 	 1.2936e-06, 1.7622e-06, 4.701248e-06+9.68e-07};
+// 	 
+// double inet_t1[3][3] = {1.89273333333e-5,7.16716e-06,5.35568e-06,
+// 	 7.16716e-06,1.43008213333e-05,6.8068e-06,
+// 	 5.35568e-06,6.8068e-06,1.89273333333e-05};	 
+// double inet_t2[3][3] = {4.24250866667e-06,1.032087e-06,1.603525e-06,
+// 	 1.032087e-06,4.52362633333e-06,1.44808125e-06,
+// 	 1.603525e-06,1.44808125e-06,4.24250866667e-06};	
+// double inet_t3[3][3] = {4.30439933333e-05,9.57068e-06,5.1205e-06,
+// 	 9.57068e-06,1.44451933333e-05,1.342825e-05,
+// 	 5.1205e-06,1.342825e-05,4.30439933333e-05};
+// double inet_t4[3][3] = {3.29223173333e-05+9.68e-07,8.042076e-06,5.2283e-06,
+// 	 8.042076e-06,1.47493026667e-5+9.68e-07,1.1283525e-5,
+// 	 5.2283e-06,1.1283525e-5,3.29223173333e-05+9.68e-07};
+//  vector<double> g_vec={0.0,0.0,-18.0};// upright
+
+ // create kdl controller instance:
+  //vector<double> g_vec={0.0,-18.0,0.0}; // in-grasp box 
+  //vector<double> g_vec={0.0,0.0,-18.0};// upright
+ 
+	
+ }
