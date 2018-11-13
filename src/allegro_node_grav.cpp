@@ -728,17 +728,7 @@ void AllegroNodeImpedance::computeDesiredTorque() {
 			my_G[i+12]=mt[i]*(Jtotal_Rot_Transp[i+12][9]*ext_force[0]+Jtotal_Rot_Transp[i+12][10]*ext_force[1]+Jtotal_Rot_Transp[i+12][11]*ext_force[2]+Jtotal_Rot_Transp[i+12][21]*ext_force[3]+Jtotal_Rot_Transp[i+12][22]*ext_force[4]+Jtotal_Rot_Transp[i+12][23]*ext_force[5]);
 			
 		}
-		/*if (myhelp==1){
-			cout << "My Grav Torque"; 
-			cout << "\n"; 
-			for (int i = 0; i < 16; i++) {								
-					cout << my_G[i];		
-					cout << " "; 				
-				
-			}
-		cout << "\n"; 	
-		}
-		myhelp=2;*/
+		
 	} //if (rot_received){ 	
 
 	
@@ -802,9 +792,9 @@ void AllegroNodeImpedance::computeDesiredTorque() {
       double error;
       for (int i = 0; i < DOF_JOINTS; i++) {
         error = q_des[i] - current_position_filtered[i];
-        /*desired_torque[i] = 1.0/canDevice->torqueConversion() *
-                (k_p[i] * error - k_d[i] * current_velocity_filtered[i])+my_G[i];*/
-                desired_torque[i]= my_G[i]; 
+        desired_torque[i] = 1.0/canDevice->torqueConversion() *
+                (k_p[i] * error - k_d[i] * current_velocity_filtered[i])+my_G[i];
+                //desired_torque[i]= my_G[i]; 
        }     
     //cout <<  "IMPEDANCE CONTROL";
     //cout <<  "\n";        
