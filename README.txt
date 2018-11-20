@@ -3,23 +3,23 @@
 	Installing the PCAN driver
 	Before using the hand, you must install the pcan drivers. This assumes you have a peak-systems pcan to usb adapter.
     	- Install these packages in the "home" directory. Change "INDIGO"  for "KINETIC"
-   	$ sudo apt-get install libpopt-dev ros-indigo-libpcan
+   		$ sudo apt-get install libpopt-dev ros-indigo-libpcan
 
     	- Download latest drivers in the home directory: http://www.peak-system.com/fileadmin/media/linux/index.htm#download
         - Install the drivers from peak folder.
-        $ cd ~/peak-linux-driver-8.6.0
-	$ make clean; make NET=NO_NETDEV_SUPPORT
-	$ sudo make install
-	$ sudo /sbin/modprobe pcan
+		$ cd ~/peak-linux-driver-8.6.0
+		$ make clean; make NET=NO_NETDEV_SUPPORT
+		$ sudo make install
+		$ sudo /sbin/modprobe pcan
 
 	- Test that the interface is installed properly with:
-	$ cat /proc/pcan
+		$ cat /proc/pcan
           You should see some stuff streaming.
 	
 	- When the hand is connected, you should see pcanusb0 or pcanusb1 in the list of available interfaces:
-	$ ls -l /dev/pcan*
+		$ ls -l /dev/pcan*
 	- If you do not see any available files, you may need to run:
- 	- sudo ./driver/pcan_make_devices 2
+ 		$ sudo ./driver/pcan_make_devices 2
 	from the downloaded pcan folder: this theoretically creates the devices files if the system has not done it automatically.
 
 2) MAKE FULL INSTALLATION
