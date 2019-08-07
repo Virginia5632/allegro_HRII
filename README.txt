@@ -64,7 +64,7 @@
 4) TRY NEW NODES
 	- terminal 1:
 		>> roslaunch allegro_hand_controllers allegro_hand.launch HAND:=right CONTROLLER:=impedance
-	- terminal 2 (Home position with high stiffness):
+	- terminal 2 (Home position):
 		>> rostopic pub /allegroHand_0/impedance_cmd allegro_hand_controllers/StiffControl "header:
 		seq: 0
 		stamp: {secs: 0, nsecs: 0}
@@ -84,6 +84,15 @@
 		DesKp: [600.0, 600.0, 600.0, 1000.0,600.0, 600.0, 600.0, 1000.0,600.0, 600.0, 600.0, 1000.0,1000.0, 1000.0, 1000.0, 600.0]
 		DesKd: [15.0, 20.0, 15.0, 15.0, 15.0, 20.0, 15.0, 15.0,15.0, 20.0, 15.0, 15.0,30.0, 20.0, 20.0, 15.0]"
 
+	      (Grasp position with lower stiffness in index):
+              >> rostopic pub /allegroHand/impedance_cmd allegro_hrii/StiffControl "header:  
+	      seq: 0
+  	      stamp: {secs: 0, nsecs: 0}
+	      frame_id: ''
+	      name: ['joint_0.0', 'joint_1.0', 'joint_2.0', 'joint_3.0','joint_4.0', 'joint_5.0', 'joint_6.0', 'joint_7.0','joint_8.0', 'joint_9.0', 'joint_10.0',	 		      'joint_11.0','joint_12.0', 'joint_13.0', 'joint_14.0', 'joint_15.0']
+	      DesPos: [0,   -0.1745,    0.7854,    0.7854 , 0,-0.1745,0.7854,    0.7854,    0.0873,   -0.0873,0.8727, 0.7854,    0.8727 ,   0.4363,    0.2618,    0.7854]
+	      DesKp: [200.0, 200.0, 200.0, 200.0,600.0, 600.0, 600.0, 1000.0,600.0, 600.0, 600.0, 1000.0,1000.0, 1000.0, 1000.0, 600.0]
+	      DesKd: [15.0, 20.0, 15.0, 15.0, 15.0, 20.0, 15.0, 15.0,15.0, 20.0, 15.0, 15.0,30.0, 20.0, 20.0, 15.0]" 
 
 ////////////////////////////////////////////
 /////////////////// EXTRAS /////////////////
